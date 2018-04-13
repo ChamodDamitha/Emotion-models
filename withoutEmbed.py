@@ -22,6 +22,7 @@ import datetime
 import cPickle as pickle
 import keras.backend as K
 
+vocab_size = 19851
 max_features = 20000
 maxSeqLength = 50
 maxlen = 50  # cut texts after this number of words (among top max_features most common words)
@@ -61,13 +62,22 @@ earlyStoper = EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose
 
 # define baseline model
 def baseline_model():
-    # create model
+    embedding_vecor_length = 1000
+
     model = Sequential()
-    model.add(Dense(8, input_dim=50, activation='relu'))
-    model.add(Dense(11, activation='softmax'))
-    # Compile model
-    model.compile(loss='categorical_crossentropy', optimizer='adam',
-                  metrics=['accuracy', jaccard_distance])
+    model.add(Embedding(vocab_size, embedding_vecor_length, input_length=maxSeqLength))
+    model.add(LSTM(100))
+    model.add(Dense(11, activation='relu'))
+
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', jaccard_distance])
+    # create model
+    # model = Sequential()
+    # model.add(Dense(8, input_dim=50, activation='relu'))
+    # model.add(Dense(10, activation='relu'))
+    # model.add(Dense(11, activation='softmax'))
+    # # Compile model
+    # model.compile(loss='categorical_crossentropy', optimizer='adam',
+    #               metrics=['accuracy', jaccard_distance])
     return model
 
 model = baseline_model()
@@ -82,7 +92,7 @@ model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=30,
           validation_data=(x_test, y_test),
-          callbacks=[])
+          callbacks=[earlyStoper])
 model.save('test_seq1.h5')
 score, acc, jac_dis = model.evaluate(x_test, y_test,
                             batch_size=batch_size)
